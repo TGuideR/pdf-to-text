@@ -44,14 +44,10 @@ class TyphoonOCRConverter:
         try:
             logger.info(f"Processing: {pdf_path}")
             # opened file as reading (r) in binary (b) mode
-            file = open(pdf_path,
-                        'rb')
+            with open(pdf_path, "rb") as f:
+                pdfReader = PyPDF2.PdfReader(f)
+                totalPages = len(pdfReader.pages)
 
-            # store data in pdfReader
-            pdfReader = PyPDF2.PdfReader(file)
-
-            # count number of pages
-            totalPages = len(pdfReader.pages)
 
             # Always OCR page 1 (typhoon_ocr currently supports page_num=1)
             messages = prepare_ocr_messages(
@@ -73,12 +69,10 @@ class TyphoonOCRConverter:
 
             text = response.choices[0].message.content.strip()
 
-            os.makedirs(os.path.dirname(output_path), exist_ok=True)
-            with open(output_path, "w", encoding="utf-8") as f:
+            with open(output_path, "a", encoding="utf-8") as f:  # "a" = append
+                f.write("\n")
                 f.write(text)
 
-            logger.info(f"Converted -> {output_path}")
-            return True
 
         except Exception as e:
             logger.error(f"Failed to convert {pdf_path}: {e}")
