@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama-server
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+      - ./start.sh:/start.sh
+    environment:
+      - OLLAMA_HOST=0.0.0.0
+    entrypoint: ["/bin/bash"]
+    command: ["/start.sh"]
+    restart: unless-stopped
+
+  pdf-converter:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pdf-converter
+    depends_on:
+      - ollama
+    volumes:
+      - ./doc:/app/doc
+      - ./doc_text:/app/doc_text
+      - ./converter.py:/app/converter.py
+    environment:
+      - OLLAMA_HOST=ollama
+      - OLLAMA_PORT=11434
+      - MODEL_NAME=scb10x/typhoon-ocr-7b:latest
+    working_dir: /app
+    command: python converter.py
+    restart: "no"
+
+volumes:
+  ollama_data:
