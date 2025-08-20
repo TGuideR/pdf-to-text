@@ -48,30 +48,30 @@ class TyphoonOCRConverter:
                 pdfReader = PyPDF2.PdfReader(f)
                 totalPages = len(pdfReader.pages)
 
+            for page in range(1, totalPages+1):
+                # Always OCR page 1 (typhoon_ocr currently supports page_num=1)
+                messages = prepare_ocr_messages(
+                    pdf_or_image_path=pdf_path,
+                    task_type="default",  # or "structure" if you want table format preserved
+                    page_num=page
+                )
 
-            # Always OCR page 1 (typhoon_ocr currently supports page_num=1)
-            messages = prepare_ocr_messages(
-                pdf_or_image_path=pdf_path,
-                task_type="default",  # or "structure" if you want table format preserved
-                page_num=totalPages
-            )
+                response = self.client.chat.completions.create(
+                    model=self.model_name,
+                    messages=messages,
+                    max_tokens=16000,
+                    extra_body={
+                        "repetition_penalty": 1.2,
+                        "temperature": 0.1,
+                        "top_p": 0.6,
+                    },
+                )
 
-            response = self.client.chat.completions.create(
-                model=self.model_name,
-                messages=messages,
-                max_tokens=16000,
-                extra_body={
-                    "repetition_penalty": 1.2,
-                    "temperature": 0.1,
-                    "top_p": 0.6,
-                },
-            )
+                text = response.choices[0].message.content.strip()
 
-            text = response.choices[0].message.content.strip()
-
-            with open(output_path, "a", encoding="utf-8") as f:  # "a" = append
-                f.write("\n")
-                f.write(text)
+                with open(output_path, "a", encoding="utf-8") as f:  # "a" = append
+                    f.write("\n")
+                    f.write(text)
 
 
         except Exception as e:
